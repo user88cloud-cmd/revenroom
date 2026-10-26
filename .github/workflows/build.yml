@@ -1,0 +1,33 @@
+name: Build
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            built: dist/REVENROOM.exe
+            asset: REVENROOM.exe
+          - os: ubuntu-latest
+            built: dist/REVENROOM
+            asset: REVENROOM-linux
+          - os: macos-latest
+            built: dist/REVENROOM
+            asset: REVENROOM-macos
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pyinstaller rich prompt_toolkit
+      - run: pyinstaller --onefile --name REVENROOM guest.py
+      - shell: bash
+        run: cp "${{ matrix.built }}" "${{ matrix.asset }}"
+      - shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload v1.0 "${{ matrix.asset }}" --clobber
